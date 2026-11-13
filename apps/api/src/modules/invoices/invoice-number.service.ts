@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 
-const NUMBER_PREFIX = 'INV';
+const INVOICE_PREFIX = 'INV';
+const CREDIT_NOTE_PREFIX = 'CN';
 const NUMBER_WIDTH = 6;
 
 @Injectable()
@@ -12,6 +13,14 @@ export class InvoiceNumberService {
    * write succeed or roll back together.
    */
   async nextNumber(tx: Prisma.TransactionClient, tenantId: string): Promise<string> {
+    return format(INVOICE_PREFIX, await this.bump(tx, tenantId));
+  }
+
+  async nextCreditNoteNumber(tx: Prisma.TransactionClient, tenantId: string): Promise<string> {
+    return format(CREDIT_NOTE_PREFIX, await this.bump(tx, tenantId));
+  }
+
+  private async bump(tx: Prisma.TransactionClient, tenantId: string): Promise<bigint> {
     const rows = await tx.$queryRaw<{ next_number: bigint }[]>`
       UPDATE invoice_sequences
       SET "nextNumber" = "nextNumber" + 1
@@ -21,12 +30,12 @@ export class InvoiceNumberService {
     const row = rows[0];
     if (!row) {
       await tx.$executeRaw`INSERT INTO invoice_sequences ("tenantId", "nextNumber") VALUES (${tenantId}::uuid, 2)`;
-      return format(1n);
+      return 1n;
     }
-    return format(row.next_number);
+    return row.next_number;
   }
 }
 
-function format(n: bigint): string {
-  return `${NUMBER_PREFIX}-${n.toString().padStart(NUMBER_WIDTH, '0')}`;
+function format(prefix: string, n: bigint): string {
+  return `${prefix}-${n.toString().padStart(NUMBER_WIDTH, '0')}`;
 }
