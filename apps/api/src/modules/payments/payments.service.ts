@@ -60,8 +60,9 @@ export class PaymentsService {
     amountKobo: bigint;
     rawPayload: unknown;
   }) {
-    // Admin scope: webhook handler runs before tenant scope is established via membership.
-    return this.scope.runAsAdmin(async (tx) => {
+    // Webhook knows which tenant the payment is for from signed metadata;
+    // run under that tenant's RLS scope so the insert passes WITH CHECK.
+    return this.scope.run(input.tenantId, async (tx) => {
       const existing = await tx.payment.findFirst({
         where: { tenantId: input.tenantId, provider: input.provider, reference: input.reference },
       });
@@ -79,7 +80,11 @@ export class PaymentsService {
     });
   }
 
-  async enqueueReconciliation(paymentId: string) {
-    await this.reconcileQueue.add('reconcile', { paymentId }, { attempts: 5, backoff: { type: 'exponential', delay: 5_000 } });
+  async enqueueReconciliation(paymentId: string, tenantId: string) {
+    await this.reconcileQueue.add(
+      'reconcile',
+      { paymentId, tenantId },
+      { attempts: 5, backoff: { type: 'exponential', delay: 5_000 } },
+    );
   }
 }

@@ -12,7 +12,7 @@ import { BigIntSerializerInterceptor } from './common/pipes/bigint-serializer.in
 import { AllExceptionsFilter } from './common/http-exception.filter.js';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create(AppModule, { bufferLogs: true, rawBody: true });
   app.useLogger(app.get(Logger));
   app.use(helmet());
   app.use(cookieParser());

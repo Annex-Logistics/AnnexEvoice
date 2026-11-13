@@ -45,7 +45,7 @@ export class WebhooksController {
       amountKobo: BigInt(amount),
       rawPayload: body,
     });
-    await this.payments.enqueueReconciliation(payment.id);
+    await this.payments.enqueueReconciliation(payment.id, tenantId);
     return { ok: true };
   }
 }
