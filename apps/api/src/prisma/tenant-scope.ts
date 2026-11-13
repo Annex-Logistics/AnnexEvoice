@@ -20,12 +20,15 @@ export class TenantScope {
   }
 
   /**
-   * Admin-only. Bypasses RLS (needs the connection to be the app_admin role).
-   * Call sparingly from `admin`/webhook paths.
+   * Admin scope. Sets `app.is_admin='true'`, which the RLS policies recognize
+   * via the `is_admin_scope()` function. The DB role itself doesn't need
+   * BYPASSRLS. Only called from the `admin` module (ADMIN role at HTTP) and
+   * occasional cross-tenant maintenance jobs.
    */
   async runAsAdmin<T>(fn: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
     return this.prisma.$transaction(async (tx) => {
       await tx.$executeRawUnsafe(`SELECT set_config('app.tenant_id', '', true)`);
+      await tx.$executeRawUnsafe(`SELECT set_config('app.is_admin', 'true', true)`);
       return fn(tx);
     });
   }

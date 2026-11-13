@@ -19,6 +19,17 @@ EXCEPTION WHEN others THEN
 END;
 $$ LANGUAGE plpgsql STABLE;
 
+-- True when the connection is running an admin-scoped query (set by
+-- TenantScope.runAsAdmin). Lets the admin module see every tenant without
+-- the DB role needing BYPASSRLS.
+CREATE OR REPLACE FUNCTION is_admin_scope() RETURNS boolean AS $$
+BEGIN
+  RETURN current_setting('app.is_admin', true) = 'true';
+EXCEPTION WHEN others THEN
+  RETURN false;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
 DO $$
 DECLARE
   tbl text;
@@ -38,11 +49,11 @@ BEGIN
 END
 $$;
 
--- Tenant table: the tenant row's own id is the tenant id.
+-- Tenant table: the tenant row's own id is the tenant id. Admin scope sees every row.
 DROP POLICY IF EXISTS tenants_isolation ON tenants;
 CREATE POLICY tenants_isolation ON tenants
-  USING (id = current_tenant_id())
-  WITH CHECK (id = current_tenant_id());
+  USING (is_admin_scope() OR id = current_tenant_id())
+  WITH CHECK (is_admin_scope() OR id = current_tenant_id());
 
 -- All other direct-tenantId tables.
 DO $$
@@ -57,7 +68,7 @@ BEGIN
   FOREACH tbl IN ARRAY tenant_tables LOOP
     EXECUTE format('DROP POLICY IF EXISTS %I ON %I;', tbl || '_isolation', tbl);
     EXECUTE format(
-      'CREATE POLICY %I ON %I USING ("tenantId" = current_tenant_id()) WITH CHECK ("tenantId" = current_tenant_id());',
+      'CREATE POLICY %I ON %I USING (is_admin_scope() OR "tenantId" = current_tenant_id()) WITH CHECK (is_admin_scope() OR "tenantId" = current_tenant_id());',
       tbl || '_isolation',
       tbl
     );
