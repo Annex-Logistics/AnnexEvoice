@@ -5,6 +5,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { LoggerModule } from 'nestjs-pino';
 
 import { PrismaService } from './prisma.service.js';
+import { WorkerTenantScope } from './tenant-scope.js';
 import { EInvoiceReconcileProcessor } from './processors/einvoice-reconcile.processor.js';
 import { EInvoiceSubmitProcessor } from './processors/einvoice-submit.processor.js';
 import { NotificationsProcessor } from './processors/notifications.processor.js';
@@ -32,6 +33,7 @@ import { WhatsappInboundProcessor } from './processors/whatsapp-inbound.processo
   ],
   providers: [
     PrismaService,
+    WorkerTenantScope,
     EInvoiceSubmitProcessor,
     EInvoiceReconcileProcessor,
     WhatsappInboundProcessor,
