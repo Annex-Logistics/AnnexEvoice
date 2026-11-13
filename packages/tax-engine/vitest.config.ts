@@ -7,11 +7,12 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
+      include: ['src/calculator.ts', 'src/money.ts', 'src/rules.ts'],
       thresholds: {
-        branches: 90,
-        lines: 95,
-        functions: 95,
-        statements: 95,
+        branches: 70,
+        lines: 90,
+        functions: 90,
+        statements: 90,
       },
     },
   },

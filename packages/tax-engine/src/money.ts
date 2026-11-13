@@ -9,9 +9,11 @@ export function nairaToKobo(naira: number | string): Kobo {
   if (!/^-?\d+(?:\.\d{1,2})?$/.test(normalized)) {
     throw new Error(`Invalid naira amount: ${naira}`);
   }
-  const [whole, fraction = ''] = normalized.split('.');
+  const parts = normalized.split('.');
+  const whole = parts[0] ?? '0';
+  const fraction = parts[1] ?? '';
   const paddedFraction = (fraction + '00').slice(0, 2);
-  return BigInt(whole) * KOBO_PER_NAIRA + (whole!.startsWith('-') ? -BigInt(paddedFraction) : BigInt(paddedFraction));
+  return BigInt(whole) * KOBO_PER_NAIRA + (whole.startsWith('-') ? -BigInt(paddedFraction) : BigInt(paddedFraction));
 }
 
 export function koboToNaira(kobo: Kobo): string {
@@ -25,8 +27,10 @@ export function koboToNaira(kobo: Kobo): string {
 
 export function formatKoboAsNGN(kobo: Kobo): string {
   const naira = koboToNaira(kobo);
-  const [whole, fraction] = naira.split('.');
-  const withCommas = whole!.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const parts = naira.split('.');
+  const whole = parts[0] ?? '0';
+  const fraction = parts[1] ?? '00';
+  const withCommas = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   return `₦${withCommas}.${fraction}`;
 }
 

@@ -28,8 +28,12 @@ describe('money', () => {
 
   it('applies basis points with half-up rounding', () => {
     expect(applyBps(10_000n, 750)).toBe(750n);
+    // 1333 * 750 / 10000 = 99.975 → 100
     expect(applyBps(1_333n, 750)).toBe(100n);
-    expect(applyBps(1_334n, 750)).toBe(101n);
+    // 1340 * 750 / 10000 = 100.5 exactly → 101 (half-up)
+    expect(applyBps(1_340n, 750)).toBe(101n);
+    // 1339 * 750 / 10000 = 100.425 → 100
+    expect(applyBps(1_339n, 750)).toBe(100n);
   });
 
   it('roundHalfUp handles negatives', () => {
