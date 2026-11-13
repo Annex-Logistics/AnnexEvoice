@@ -103,4 +103,9 @@ CREATE POLICY idempotency_keys_isolation ON idempotency_keys
 
 -- Admin bypass.
 GRANT USAGE ON SCHEMA public TO app_admin;
-ALTER ROLE app_admin BYPASSRLS;
+
+-- NOTE: granting BYPASSRLS requires a superuser and is NOT part of the normal
+-- migration. The DBA runs this once at setup:
+--   ALTER ROLE app_admin BYPASSRLS;
+-- The application role (annexevoice) never has BYPASSRLS — it always relies
+-- on current_tenant_id() being set via TenantScope.

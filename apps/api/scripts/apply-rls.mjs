@@ -1,31 +1,83 @@
 #!/usr/bin/env node
-// Applies RLS policies defined in prisma/rls.sql using psql.
-// Runs after prisma migrate.
-import { spawnSync } from 'node:child_process';
+// Applies RLS policies defined in prisma/rls.sql using Prisma's own connection
+// (no psql dependency, so this works in minimal containers).
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
-const here = dirname(fileURLToPath(import.meta.url));
-const rlsPath = resolve(here, '..', 'prisma', 'rls.sql');
-const sql = readFileSync(rlsPath, 'utf8');
+import { PrismaClient } from '@prisma/client';
 
-const url = process.env.DATABASE_URL;
-if (!url) {
+const here = dirname(fileURLToPath(import.meta.url));
+const rawSql = readFileSync(resolve(here, '..', 'prisma', 'rls.sql'), 'utf8');
+
+if (!process.env.DATABASE_URL) {
   console.error('DATABASE_URL not set');
   process.exit(1);
 }
 
-// psql doesn't accept Prisma's ?schema=foo query param — strip it.
-const psqlUrl = url.replace(/[?&]schema=[^&]*/g, '');
-
-const result = spawnSync('psql', [psqlUrl, '-v', 'ON_ERROR_STOP=1', '-f', rlsPath], {
-  stdio: 'inherit',
-  env: { ...process.env, PGCONNECT_TIMEOUT: '10' },
-});
-
-if (result.status !== 0) {
-  console.error('psql exited with status', result.status);
-  process.exit(result.status ?? 1);
+// Strip line comments (-- …) that sit outside $$-quoted bodies. We split on
+// newlines, drop anything after a line-leading '--', then rejoin.
+function stripComments(input) {
+  const lines = input.split('\n');
+  const out = [];
+  let inDollar = false;
+  for (const raw of lines) {
+    // Track $$ opens/closes line-by-line. The rls.sql never has two $$ markers
+    // on the same line, so a per-line count is enough.
+    const count = (raw.match(/\$\$/g) ?? []).length;
+    const originalInDollar = inDollar;
+    if (count % 2 === 1) inDollar = !inDollar;
+    if (originalInDollar) {
+      out.push(raw);
+      continue;
+    }
+    const trimmed = raw.trimStart();
+    if (trimmed.startsWith('--')) continue;
+    // Strip trailing -- comments too (naïve but fine for our file).
+    const idx = raw.indexOf('--');
+    out.push(idx >= 0 ? raw.slice(0, idx) : raw);
+  }
+  return out.join('\n');
 }
-console.log('RLS policies applied.');
+
+// Split on semicolons not inside a $$ block.
+function splitStatements(input) {
+  const out = [];
+  let buf = '';
+  let inDollar = false;
+  for (let i = 0; i < input.length; i += 1) {
+    const two = input.slice(i, i + 2);
+    if (two === '$$') {
+      inDollar = !inDollar;
+      buf += two;
+      i += 1;
+      continue;
+    }
+    const ch = input[i];
+    if (ch === ';' && !inDollar) {
+      const stmt = buf.trim();
+      if (stmt.length > 0) out.push(stmt);
+      buf = '';
+    } else {
+      buf += ch;
+    }
+  }
+  const tail = buf.trim();
+  if (tail.length > 0) out.push(tail);
+  return out;
+}
+
+const prisma = new PrismaClient();
+
+try {
+  const statements = splitStatements(stripComments(rawSql));
+  for (const stmt of statements) {
+    await prisma.$executeRawUnsafe(stmt);
+  }
+  console.log(`RLS policies applied (${statements.length} statements).`);
+} catch (err) {
+  console.error('Failed to apply RLS:', err);
+  process.exit(1);
+} finally {
+  await prisma.$disconnect();
+}
