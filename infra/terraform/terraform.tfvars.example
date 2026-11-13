@@ -1,0 +1,5 @@
+project_id = "annexevoice-staging"
+env        = "staging"
+region     = "europe-west1"
+zone       = "europe-west1-b"
+domain     = "annexevoice.ng"

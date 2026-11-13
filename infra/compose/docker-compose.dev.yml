@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-annexevoice}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-annexevoice}
+      POSTGRES_DB: ${POSTGRES_DB:-annexevoice}
+    ports:
+      - '5432:5432'
+    volumes:
+      - annexevoice_pg:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '6379:6379'
+    volumes:
+      - annexevoice_redis:/data
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - '1025:1025'
+      - '8025:8025'
+
+volumes:
+  annexevoice_pg:
+  annexevoice_redis:

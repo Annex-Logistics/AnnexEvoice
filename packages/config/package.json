@@ -1,0 +1,13 @@
+{
+  "name": "@annexevoice/config",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./tsconfig.base.json",
+  "files": [
+    "tsconfig.base.json",
+    "tsconfig.nest.json",
+    "tsconfig.react.json",
+    "eslint-preset.cjs",
+    "prettier-preset.cjs"
+  ]
+}

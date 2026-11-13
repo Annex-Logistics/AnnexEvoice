@@ -1,0 +1,56 @@
+node_modules/
+.pnpm-store/
+dist/
+build/
+coverage/
+.next/
+.nuxt/
+.cache/
+.turbo/
+.vite/
+.parcel-cache/
+.vercel/
+.wrangler/
+.serverless/
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Logs & local state
+*.log
+pids/
+*.pid
+*.seed
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+
+# Prisma
+apps/api/prisma/*.db
+apps/api/prisma/*.db-journal
+
+# Playwright
+tests/e2e/test-results/
+tests/e2e/playwright-report/
+tests/e2e/.auth/
+
+# Terraform
+infra/terraform/.terraform/
+infra/terraform/*.tfstate*
+infra/terraform/*.tfvars
+!infra/terraform/*.tfvars.example
+
+# Build outputs
+apps/*/dist/
+apps/*/.turbo/
+packages/*/dist/
+packages/*/.turbo/

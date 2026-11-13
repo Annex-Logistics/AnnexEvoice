@@ -1,0 +1,29 @@
+# Replace example.com with your real hostnames.
+{
+  email ops@annexevoice.ng
+}
+
+app.annexevoice.ng {
+  root * /srv/web
+  encode gzip zstd
+  try_files {path} /index.html
+  file_server
+  header {
+    Strict-Transport-Security "max-age=63072000"
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    Content-Security-Policy "default-src 'self'; connect-src 'self' https://api.annexevoice.ng; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+  }
+}
+
+admin.annexevoice.ng {
+  root * /srv/admin
+  encode gzip zstd
+  try_files {path} /index.html
+  file_server
+}
+
+api.annexevoice.ng {
+  encode gzip zstd
+  reverse_proxy api:3000
+}

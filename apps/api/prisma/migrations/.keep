@@ -1,0 +1,1 @@
+Migrations are created on first run with `pnpm db:migrate:dev`. After that, `pnpm db:migrate` applies them in order and runs scripts/apply-rls.mjs.

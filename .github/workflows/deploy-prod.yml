@@ -1,0 +1,51 @@
+name: Deploy — production
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Auth to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Configure Docker auth
+        run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
+      - name: Tag and promote
+        run: |
+          SHA=${GITHUB_SHA::7}
+          TAG=${GITHUB_REF#refs/tags/}
+          REG=${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/annexevoice
+          for name in api worker web admin; do
+            gcloud artifacts docker tags add $REG/${name}:$SHA $REG/${name}:$TAG
+          done
+      - name: SSH deploy via IAP (prod)
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          gcloud compute ssh annexevoice-prod --tunnel-through-iap --zone=${{ secrets.GCP_ZONE_PROD }} --command "
+            cd /opt/annexevoice &&
+            sudo IMAGE_TAG=$TAG PROJECT=${{ secrets.GCP_PROJECT }} REGION=${{ secrets.GCP_REGION }} \
+              docker compose -f infra/compose/docker-compose.prod.yml pull &&
+            sudo IMAGE_TAG=$TAG PROJECT=${{ secrets.GCP_PROJECT }} REGION=${{ secrets.GCP_REGION }} \
+              docker compose -f infra/compose/docker-compose.prod.yml up -d &&
+            sleep 15 &&
+            curl -fsS https://api.annexevoice.ng/health/ready || (
+              echo 'Health failed — rolling back' &&
+              sudo IMAGE_TAG=\$(cat /opt/annexevoice/.last_good_tag) \
+                docker compose -f infra/compose/docker-compose.prod.yml up -d &&
+              exit 1
+            ) &&
+            echo $TAG | sudo tee /opt/annexevoice/.last_good_tag
+          "

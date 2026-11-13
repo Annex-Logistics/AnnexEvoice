@@ -1,0 +1,49 @@
+name: Deploy — staging
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Auth to GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Configure Docker auth
+        run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
+      - name: Build & push images
+        run: |
+          SHA=${GITHUB_SHA::7}
+          REG=${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/annexevoice
+          for name in api worker web admin; do
+            docker build -f infra/docker/${name}.Dockerfile -t $REG/${name}:$SHA .
+            docker push $REG/${name}:$SHA
+          done
+      - name: SSH deploy via IAP
+        run: |
+          SHA=${GITHUB_SHA::7}
+          gcloud compute ssh annexevoice-staging --tunnel-through-iap --zone=${{ secrets.GCP_ZONE }} --command "
+            cd /opt/annexevoice &&
+            sudo IMAGE_TAG=$SHA PROJECT=${{ secrets.GCP_PROJECT }} REGION=${{ secrets.GCP_REGION }} \
+              docker compose -f infra/compose/docker-compose.prod.yml pull &&
+            sudo IMAGE_TAG=$SHA PROJECT=${{ secrets.GCP_PROJECT }} REGION=${{ secrets.GCP_REGION }} \
+              docker compose -f infra/compose/docker-compose.prod.yml up -d &&
+            sleep 10 &&
+            curl -fsS https://api.annexevoice.ng/health/ready
+          "

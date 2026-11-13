@@ -1,0 +1,36 @@
+{
+  "name": "annexevoice",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AnnexEvoice — WhatsApp-first e-invoicing & tax compliance for Nigerian SMEs",
+  "packageManager": "pnpm@9.12.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:e2e": "pnpm --filter e2e test",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
+    "db:migrate": "pnpm --filter @annexevoice/api db:migrate",
+    "db:seed": "pnpm --filter @annexevoice/api db:seed",
+    "db:studio": "pnpm --filter @annexevoice/api db:studio",
+    "api:generate": "pnpm --filter @annexevoice/api-client generate",
+    "clean": "turbo run clean && rm -rf node_modules .turbo"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "@typescript-eslint/eslint-plugin": "^8.14.0",
+    "@typescript-eslint/parser": "^8.14.0",
+    "eslint": "^9.14.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-import-resolver-typescript": "^3.6.3",
+    "eslint-plugin-import": "^2.31.0",
+    "prettier": "^3.3.3",
+    "turbo": "^2.3.3",
+    "typescript": "^5.6.3"
+  }
+}
