@@ -54,7 +54,7 @@ export class InvoicesService {
     });
   }
 
-  async createDraft(tenantId: string, actorUserId: string, input: CreateInvoiceInput) {
+  async createDraft(tenantId: string, actorUserId: string | null, input: CreateInvoiceInput) {
     if (input.lines.length === 0) throw new BadRequestException('At least one line required');
     const taxRules = await this.tax.rulesForEngine(tenantId);
     const defaultVatRuleId = await this.resolveDefaultVatRule(tenantId);
@@ -99,14 +99,14 @@ export class InvoicesService {
         include: { lines: true },
       });
       await this.audit.record(
-        { tenantId, actorUserId, action: 'invoice.drafted', entity: 'invoice', entityId: invoice.id, after: invoice },
+        { tenantId, actorUserId: actorUserId ?? undefined, action: 'invoice.drafted', entity: 'invoice', entityId: invoice.id, after: invoice },
         tx,
       );
       return invoice;
     });
   }
 
-  async issue(tenantId: string, actorUserId: string, id: string) {
+  async issue(tenantId: string, actorUserId: string | null, id: string) {
     return this.scope.run(tenantId, async (tx) => {
       const current = await tx.invoice.findFirst({ where: { id, tenantId } });
       if (!current) throw new NotFoundException();
@@ -131,7 +131,7 @@ export class InvoicesService {
         },
       });
       await this.audit.record(
-        { tenantId, actorUserId, action: 'invoice.issued', entity: 'invoice', entityId: id, before: current, after: issued },
+        { tenantId, actorUserId: actorUserId ?? undefined, action: 'invoice.issued', entity: 'invoice', entityId: id, before: current, after: issued },
         tx,
       );
       await this.submitQueue.add(
@@ -149,14 +149,14 @@ export class InvoicesService {
     });
   }
 
-  async cancelDraft(tenantId: string, actorUserId: string, id: string) {
+  async cancelDraft(tenantId: string, actorUserId: string | null, id: string) {
     return this.scope.run(tenantId, async (tx) => {
       const current = await tx.invoice.findFirst({ where: { id, tenantId } });
       if (!current) throw new NotFoundException();
       if (current.status !== InvoiceStatus.DRAFT) throw new ConflictException('Only drafts can be cancelled');
       const after = await tx.invoice.update({ where: { id }, data: { status: InvoiceStatus.CANCELLED } });
       await this.audit.record(
-        { tenantId, actorUserId, action: 'invoice.cancelled', entity: 'invoice', entityId: id, before: current, after },
+        { tenantId, actorUserId: actorUserId ?? undefined, action: 'invoice.cancelled', entity: 'invoice', entityId: id, before: current, after },
         tx,
       );
       return after;
