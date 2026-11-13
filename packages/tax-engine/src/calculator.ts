@@ -1,11 +1,11 @@
-import { applyBps, sumKobo, ZERO } from './money.js';
-import { findActiveRule, isExempt, isTaxable } from './rules.js';
+import { applyBps, sumKobo, ZERO } from './money';
+import { findActiveRule, isExempt, isTaxable } from './rules';
 import type {
   CalculateInvoiceInput,
   CalculatedInvoice,
   CalculatedLine,
   TaxRule,
-} from './types.js';
+} from './types';
 
 export function calculateInvoice(input: CalculateInvoiceInput): CalculatedInvoice {
   const appliedVatRules: Record<string, TaxRule> = {};

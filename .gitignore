@@ -54,3 +54,6 @@ apps/*/dist/
 apps/*/.turbo/
 packages/*/dist/
 packages/*/.turbo/
+*.tsbuildinfo
+dump.rdb
+*.log

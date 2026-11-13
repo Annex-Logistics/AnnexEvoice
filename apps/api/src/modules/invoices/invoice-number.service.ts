@@ -14,14 +14,13 @@ export class InvoiceNumberService {
   async nextNumber(tx: Prisma.TransactionClient, tenantId: string): Promise<string> {
     const rows = await tx.$queryRaw<{ next_number: bigint }[]>`
       UPDATE invoice_sequences
-      SET next_number = next_number + 1
-      WHERE tenant_id = ${tenantId}::uuid
-      RETURNING next_number - 1 AS next_number
+      SET "nextNumber" = "nextNumber" + 1
+      WHERE "tenantId" = ${tenantId}::uuid
+      RETURNING "nextNumber" - 1 AS next_number
     `;
     const row = rows[0];
     if (!row) {
-      // sequence row missing — create it and return 1
-      await tx.$executeRaw`INSERT INTO invoice_sequences (tenant_id, next_number) VALUES (${tenantId}::uuid, 2)`;
+      await tx.$executeRaw`INSERT INTO invoice_sequences ("tenantId", "nextNumber") VALUES (${tenantId}::uuid, 2)`;
       return format(1n);
     }
     return format(row.next_number);

@@ -1,6 +1,5 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
 import { IsBoolean, IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 
 import { CurrentUser, TenantId } from '../../common/decorators.js';
@@ -12,8 +11,7 @@ import { ProductsService } from './products.service.js';
 class CreateProductDto {
   @IsString() name!: string;
   @IsOptional() @IsString() sku?: string;
-  @IsInt() @Min(0) @Transform(({ value }) => BigInt(value), { toClassOnly: true })
-  unitPriceKobo!: bigint;
+  @IsInt() @Min(0) unitPriceKobo!: number;
   @IsOptional() @IsUUID() taxRuleId?: string;
   @IsOptional() @IsBoolean() active?: boolean;
 }
@@ -21,8 +19,7 @@ class CreateProductDto {
 class UpdateProductDto {
   @IsOptional() @IsString() name?: string;
   @IsOptional() @IsString() sku?: string;
-  @IsOptional() @IsInt() @Min(0) @Transform(({ value }) => BigInt(value), { toClassOnly: true })
-  unitPriceKobo?: bigint;
+  @IsOptional() @IsInt() @Min(0) unitPriceKobo?: number;
   @IsOptional() @IsUUID() taxRuleId?: string;
   @IsOptional() @IsBoolean() active?: boolean;
 }
@@ -46,7 +43,7 @@ export class ProductsController {
 
   @Post()
   create(@TenantId() tenantId: string, @CurrentUser() user: AuthenticatedUser, @Body() body: CreateProductDto) {
-    return this.products.create(tenantId, user.userId, body);
+    return this.products.create(tenantId, user.userId, { ...body, unitPriceKobo: BigInt(body.unitPriceKobo) });
   }
 
   @Patch(':id')
@@ -56,6 +53,9 @@ export class ProductsController {
     @Param('id') id: string,
     @Body() body: UpdateProductDto,
   ) {
-    return this.products.update(tenantId, user.userId, id, body);
+    const { unitPriceKobo, ...rest } = body;
+    const patch: { name?: string; sku?: string; unitPriceKobo?: bigint; taxRuleId?: string; active?: boolean } = rest;
+    if (unitPriceKobo !== undefined) patch.unitPriceKobo = BigInt(unitPriceKobo);
+    return this.products.update(tenantId, user.userId, id, patch);
   }
 }

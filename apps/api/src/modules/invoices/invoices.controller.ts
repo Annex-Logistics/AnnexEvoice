@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 import { ArrayMinSize, IsArray, IsDateString, IsInt, IsOptional, IsString, IsUUID, Min, ValidateNested } from 'class-validator';
 
 import { CurrentUser, TenantId } from '../../common/decorators.js';
@@ -11,8 +11,7 @@ import { InvoicesService } from './invoices.service.js';
 
 class InvoiceLineDto {
   @IsString() description!: string;
-  @IsInt() @Min(0) @Transform(({ value }) => BigInt(value), { toClassOnly: true })
-  unitPriceKobo!: bigint;
+  @IsInt() @Min(0) unitPriceKobo!: number;
   @IsInt() @Min(1) quantity!: number;
   @IsOptional() @IsUUID() productId?: string;
   @IsOptional() @IsUUID() taxRuleId?: string;
@@ -53,7 +52,7 @@ export class InvoicesController {
       dueAt: body.dueAt ? new Date(body.dueAt) : undefined,
       lines: body.lines.map((l) => ({
         description: l.description,
-        unitPriceKobo: l.unitPriceKobo,
+        unitPriceKobo: BigInt(l.unitPriceKobo),
         quantity: l.quantity,
         productId: l.productId,
         taxRuleId: l.taxRuleId,

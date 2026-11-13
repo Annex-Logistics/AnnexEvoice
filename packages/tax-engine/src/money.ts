@@ -34,10 +34,6 @@ export function formatKoboAsNGN(kobo: Kobo): string {
   return `₦${withCommas}.${fraction}`;
 }
 
-/**
- * Half-up rounding at kobo scale. Used only when converting a rate application
- * (basis points) back to a whole number of kobo.
- */
 export function roundHalfUp(numerator: bigint, denominator: bigint): bigint {
   if (denominator === 0n) throw new Error('Divide by zero');
   const negative = (numerator < 0n) !== (denominator < 0n);
@@ -49,10 +45,6 @@ export function roundHalfUp(numerator: bigint, denominator: bigint): bigint {
   return negative ? -rounded : rounded;
 }
 
-/**
- * Apply a rate in basis points to a kobo amount.
- * 750 bps on ₦100 (10000 kobo) = 750 kobo.
- */
 export function applyBps(amount: Kobo, bps: number): Kobo {
   if (!Number.isInteger(bps) || bps < 0) {
     throw new Error(`Invalid basis points: ${bps}`);

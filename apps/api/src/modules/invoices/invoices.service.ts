@@ -138,7 +138,7 @@ export class InvoicesService {
         'submit',
         { tenantId, invoiceId: id, idempotencyKey: `${tenantId}:${id}:${number}` },
         {
-          jobId: `submit:${id}`,
+          jobId: `submit-${id}`,
           attempts: 6,
           backoff: { type: 'exponential', delay: 5_000 },
           removeOnComplete: 100,

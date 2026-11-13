@@ -1,4 +1,4 @@
-import type { TaxRule } from './types.js';
+import type { TaxRule } from './types';
 
 export function findActiveRule(rules: readonly TaxRule[], id: string, at: Date): TaxRule | undefined {
   const rule = rules.find((r) => r.id === id);

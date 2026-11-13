@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { calculateInvoice } from '../src/calculator.js';
-import type { TaxRule } from '../src/types.js';
+import { calculateInvoice } from '../src/calculator';
+import type { TaxRule } from '../src/types';
 
 const VAT_STANDARD: TaxRule = {
   id: 'rule-vat-standard',
