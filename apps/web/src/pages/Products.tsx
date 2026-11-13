@@ -1,14 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { api, formatNaira } from '../lib/api.js';
+import { apiGet, formatNaira } from '../lib/api';
+
+type Product = { id: string; name: string; sku: string | null; unitPriceKobo: string };
 
 export function ProductsPage() {
   const products = useQuery({
     queryKey: ['products'],
-    queryFn: async () => {
-      const { data } = await api.GET('/products' as never, {} as never);
-      return (data as Array<{ id: string; name: string; sku: string | null; unitPriceKobo: string }> | undefined) ?? [];
-    },
+    queryFn: () => apiGet<Product[]>('/products'),
   });
 
   return (

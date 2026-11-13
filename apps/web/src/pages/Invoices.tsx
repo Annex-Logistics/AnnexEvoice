@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 
-import { api, formatNaira } from '../lib/api.js';
+import { apiGet, formatNaira } from '../lib/api';
 
 type InvoiceRow = {
   id: string;
@@ -15,10 +15,7 @@ type InvoiceRow = {
 export function InvoicesPage() {
   const invoices = useQuery({
     queryKey: ['invoices'],
-    queryFn: async () => {
-      const { data } = await api.GET('/invoices' as never, {} as never);
-      return (data as InvoiceRow[] | undefined) ?? [];
-    },
+    queryFn: () => apiGet<InvoiceRow[]>('/invoices'),
   });
 
   return (

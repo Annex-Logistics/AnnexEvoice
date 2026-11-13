@@ -1,14 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { api } from '../lib/api.js';
+import { apiGet } from '../lib/api';
+
+type Customer = { id: string; name: string; phone: string | null; email: string | null };
 
 export function CustomersPage() {
   const customers = useQuery({
     queryKey: ['customers'],
-    queryFn: async () => {
-      const { data } = await api.GET('/customers' as never, {} as never);
-      return (data as Array<{ id: string; name: string; phone: string | null; email: string | null }> | undefined) ?? [];
-    },
+    queryFn: () => apiGet<Customer[]>('/customers'),
   });
 
   return (

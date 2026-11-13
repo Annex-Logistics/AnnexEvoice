@@ -1,14 +1,14 @@
 import { Outlet, createRootRoute, createRoute } from '@tanstack/react-router';
 
-import { AppShell } from './components/AppShell.js';
-import { DashboardPage } from './pages/Dashboard.js';
-import { InvoiceDetailPage } from './pages/InvoiceDetail.js';
-import { InvoicesPage } from './pages/Invoices.js';
-import { LoginPage } from './pages/Login.js';
-import { CustomersPage } from './pages/Customers.js';
-import { ProductsPage } from './pages/Products.js';
-import { TaxPage } from './pages/Tax.js';
-import { SettingsPage } from './pages/Settings.js';
+import { AppShell } from './components/AppShell';
+import { DashboardPage } from './pages/Dashboard';
+import { InvoiceDetailPage } from './pages/InvoiceDetail';
+import { InvoicesPage } from './pages/Invoices';
+import { LoginPage } from './pages/Login';
+import { CustomersPage } from './pages/Customers';
+import { ProductsPage } from './pages/Products';
+import { TaxPage } from './pages/Tax';
+import { SettingsPage } from './pages/Settings';
 
 const rootRoute = createRootRoute({ component: () => <Outlet /> });
 

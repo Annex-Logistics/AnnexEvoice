@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { IntegrationStatus } from '@prisma/client';
+import { IntegrationStatus, Prisma } from '@prisma/client';
 
 import { TenantScope } from '../../prisma/tenant-scope.js';
 
@@ -26,11 +26,12 @@ export class IntegrationsService {
   }
 
   async upsert(tenantId: string, provider: string, config: Record<string, unknown>) {
+    const configJson = config as Prisma.InputJsonValue;
     return this.scope.run(tenantId, (tx) =>
       tx.integrationConnection.upsert({
         where: { tenantId_provider: { tenantId, provider } },
-        update: { config, status: IntegrationStatus.CONNECTED, connectedAt: new Date() },
-        create: { tenantId, provider, config, status: IntegrationStatus.CONNECTED, connectedAt: new Date() },
+        update: { config: configJson, status: IntegrationStatus.CONNECTED, connectedAt: new Date() },
+        create: { tenantId, provider, config: configJson, status: IntegrationStatus.CONNECTED, connectedAt: new Date() },
       }),
     );
   }

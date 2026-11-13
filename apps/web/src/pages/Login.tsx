@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 
-import { api } from '../lib/api.js';
+import { apiPost } from '../lib/api';
 
 export function LoginPage() {
   const [phone, setPhone] = useState('');
@@ -13,20 +13,25 @@ export function LoginPage() {
 
   async function requestOtp() {
     setError(null);
-    const { data, error: err } = await api.POST('/auth/otp/request' as never, { body: { phone } as never });
-    if (err) return setError('Could not request OTP');
-    setDevCode((data as { devCode?: string } | undefined)?.devCode);
-    setStage('verify');
+    try {
+      const data = await apiPost<{ devCode?: string }>('/auth/otp/request', { phone });
+      setDevCode(data.devCode);
+      setStage('verify');
+    } catch {
+      setError('Could not request OTP');
+    }
   }
 
   async function verifyOtp() {
     setError(null);
-    const { data, error: err } = await api.POST('/auth/otp/verify' as never, { body: { phone, code } as never });
-    if (err) return setError('Invalid code');
-    const d = data as { accessToken: string } | undefined;
-    if (d?.accessToken) {
-      localStorage.setItem('access_token', d.accessToken);
-      navigate({ to: '/' });
+    try {
+      const data = await apiPost<{ accessToken: string }>('/auth/otp/verify', { phone, code });
+      if (data.accessToken) {
+        localStorage.setItem('access_token', data.accessToken);
+        navigate({ to: '/' });
+      }
+    } catch {
+      setError('Invalid code');
     }
   }
 

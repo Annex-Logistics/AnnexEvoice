@@ -1,14 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { api } from '../lib/api.js';
+import { apiGet } from '../lib/api';
+
+type Tenant = { legalName: string; tradingName: string | null; tin: string | null; email: string | null };
 
 export function SettingsPage() {
   const tenant = useQuery({
     queryKey: ['tenant', 'me'],
-    queryFn: async () => {
-      const { data } = await api.GET('/tenants/me' as never, {} as never);
-      return data as { legalName: string; tradingName: string | null; tin: string | null; email: string | null };
-    },
+    queryFn: () => apiGet<Tenant>('/tenants/me'),
   });
 
   return (

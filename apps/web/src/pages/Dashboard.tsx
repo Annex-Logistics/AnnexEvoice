@@ -1,14 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { api, formatNaira } from '../lib/api.js';
+import { apiGet, formatNaira } from '../lib/api';
+
+type Summary = { invoiceCount: number; vatKobo: string; whtKobo: string; totalKobo: string };
 
 export function DashboardPage() {
   const summary = useQuery({
     queryKey: ['tax', 'summary'],
-    queryFn: async () => {
-      const { data } = await api.GET('/tax/summary' as never, {} as never);
-      return data as { invoiceCount: number; vatKobo: string; whtKobo: string; totalKobo: string };
-    },
+    queryFn: () => apiGet<Summary>('/tax/summary'),
   });
 
   return (

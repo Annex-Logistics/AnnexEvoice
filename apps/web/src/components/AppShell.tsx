@@ -1,12 +1,12 @@
 import { Link, Outlet } from '@tanstack/react-router';
 
 const nav = [
-  { to: '/', label: 'Dashboard' },
-  { to: '/invoices', label: 'Invoices' },
-  { to: '/customers', label: 'Customers' },
-  { to: '/products', label: 'Products' },
-  { to: '/tax', label: 'Tax' },
-  { to: '/settings', label: 'Settings' },
+  { to: '/' as const, label: 'Dashboard' },
+  { to: '/invoices' as const, label: 'Invoices' },
+  { to: '/customers' as const, label: 'Customers' },
+  { to: '/products' as const, label: 'Products' },
+  { to: '/tax' as const, label: 'Tax' },
+  { to: '/settings' as const, label: 'Settings' },
 ];
 
 export function AppShell() {
