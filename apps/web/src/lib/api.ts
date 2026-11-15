@@ -1,28 +1,31 @@
+import { createAnnexEvoiceClient, type components } from '@annexevoice/api-client';
+
 const baseUrl = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 
-export async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${baseUrl}${path}`, {
-    headers: authHeader(),
-    credentials: 'include',
-  });
-  if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`);
-  return (await res.json()) as T;
+export const api = createAnnexEvoiceClient({
+  baseUrl,
+  credentials: 'include',
+  getAccessToken: () => localStorage.getItem('access_token'),
+});
+
+export type Schemas = components['schemas'];
+
+export class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    readonly body: unknown,
+  ) {
+    super(`API request failed: ${status}`);
+  }
 }
 
-export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${baseUrl}${path}`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', ...authHeader() },
-    credentials: 'include',
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  if (!res.ok) throw new Error(`POST ${path} failed: ${res.status}`);
-  return (await res.json()) as T;
-}
-
-function authHeader(): Record<string, string> {
-  const token = localStorage.getItem('access_token');
-  return token ? { authorization: `Bearer ${token}` } : {};
+// openapi-fetch resolves (never rejects) on HTTP errors; TanStack Query needs a throw.
+export async function unwrap<T>(
+  call: Promise<{ data?: T; error?: unknown; response: Response }>,
+): Promise<T> {
+  const { data, error, response } = await call;
+  if (!response.ok || data === undefined) throw new ApiError(response.status, error);
+  return data;
 }
 
 export function formatNaira(kobo: string | number | bigint): string {

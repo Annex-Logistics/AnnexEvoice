@@ -16,6 +16,7 @@ const out = resolve(here, '..', 'src', 'generated', 'schema.ts');
 
 console.log(`Fetching OpenAPI spec from ${specUrl}`);
 const ast = await openapiTS(specUrl);
-const banner = `// Generated from ${specUrl} on ${new Date().toISOString()}\n// Do not edit by hand.\n`;
+// No timestamp or URL: CI's openapi-drift job diffs this file, so output must be deterministic.
+const banner = '// Generated from the API\'s /openapi.json by `pnpm api:generate`. Do not edit by hand.\n';
 await writeFile(out, banner + astToString(ast));
 console.log(`Wrote ${out}`);

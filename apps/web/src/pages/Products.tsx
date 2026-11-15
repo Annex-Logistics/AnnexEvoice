@@ -1,13 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { apiGet, formatNaira } from '../lib/api';
-
-type Product = { id: string; name: string; sku: string | null; unitPriceKobo: string };
+import { api, formatNaira, unwrap } from '../lib/api';
 
 export function ProductsPage() {
   const products = useQuery({
     queryKey: ['products'],
-    queryFn: () => apiGet<Product[]>('/products'),
+    queryFn: () => unwrap(api.GET('/v1/products')),
   });
 
   return (

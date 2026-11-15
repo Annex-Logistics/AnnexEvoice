@@ -1,25 +1,13 @@
 import { useParams } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 
-import { apiGet, formatNaira } from '../lib/api';
-
-type Invoice = {
-  id: string;
-  number: string | null;
-  status: string;
-  totalKobo: string;
-  vatKobo: string;
-  subtotalKobo: string;
-  customer: { name: string };
-  lines: Array<{ id: string; description: string; quantity: number; unitPriceKobo: string; lineTotalKobo: string }>;
-  irn: string | null;
-};
+import { api, formatNaira, unwrap } from '../lib/api';
 
 export function InvoiceDetailPage() {
   const { id } = useParams({ strict: false }) as { id: string };
   const invoice = useQuery({
     queryKey: ['invoices', id],
-    queryFn: () => apiGet<Invoice>(`/invoices/${id}`),
+    queryFn: () => unwrap(api.GET('/v1/invoices/{id}', { params: { path: { id } } })),
   });
 
   if (!invoice.data) return <p>Loading…</p>;

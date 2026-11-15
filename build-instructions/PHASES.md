@@ -292,5 +292,43 @@ scripts/smoke.sh  18/18
 
 ---
 
+## Phase P — review fixes + real OpenAPI client (session 2, 2026-11-15)
+**Scope.** Re-verify the handoff on a fresh Windows machine, fix what broke,
+then NEXT #1.
+
+**Review findings fixed.**
+- `pnpm lint` failed in every package: ESLint 9 ignores `.eslintrc.cjs`.
+  Migrated to `eslint.config.mjs` (flat config); dropped `--ext`.
+- `RESUME.md` skipped the superuser `CREATE ROLE app_admin` step, so
+  `apply-rls.mjs` fails on a fresh DB.
+- `apps/web` crashed on boot: shell layout and dashboard both had path `/`
+  ("Duplicate routes found with id: /"). Shell is now a pathless layout.
+- Every web page and the admin console called `/customers`, `/admin/...`
+  etc. without the `/v1` prefix, so all requests 404'd.
+- API `start`/`start:prod` and `infra/docker/api.Dockerfile` ran
+  `dist/main.js`; the build emits `dist/src/main.js`.
+- CI `openapi-drift` could never detect drift: no Postgres/Redis services, no
+  `prisma generate`, `|| true` swallowed failures, and the generated banner
+  had a timestamp.
+
+**Delivered (NEXT #1).**
+- `@nestjs/swagger` CLI plugin enabled (`classValidatorShim`, and
+  `.controller.ts` added to `dtoFileNameSuffix` because DTOs live inline in
+  controllers) — request bodies now have real schemas.
+- `apps/api/src/common/openapi-responses.ts`: response schemas for auth,
+  tenants/me, tax/summary, customers, products, invoices (list/detail/create/
+  issue/cancel). Kobo fields are `string` (BigInt interceptor).
+- `packages/api-client/src/generated/schema.ts` generated from the live API;
+  deterministic banner.
+- `apps/web` uses `createAnnexEvoiceClient` + `unwrap()`; hand-written
+  response types deleted. Verified in the browser: dashboard, invoices,
+  invoice detail, customers, products, settings all render live data.
+
+**Not typed yet.** Admin, audit, billing, payments, credit-notes,
+integrations, einvoice, public-api responses — their `data` is `never`
+until response schemas are added (do it alongside NEXT #10 admin UI).
+
+---
+
 ## Not in this session
 See `NEXT.md` for the ranked backlog.

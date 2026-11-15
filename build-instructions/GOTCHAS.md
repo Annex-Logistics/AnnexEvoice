@@ -134,3 +134,26 @@ different port.
 ### 22. `dump.rdb` and `.tsbuildinfo` are gitignored
 They were committed once in Phase C, then cleaned up in Phase D. Don't
 re-add them.
+
+## Added in Phase P
+
+### 23. ESLint 9 only reads `eslint.config.mjs`
+`.eslintrc.*` is silently unsupported and `--ext` is an error. Config lives
+at the repo root; package `lint` scripts are just `eslint src`.
+
+### 24. Swagger plugin skips DTOs that live in controller files
+Default `dtoFileNameSuffix` is `.dto.ts`/`.entity.ts`. Our DTOs are inline
+in `*.controller.ts`, so `nest-cli.json` adds that suffix. Without the plugin
+every DTO schema is `properties: {}`.
+
+### 25. Responses need explicit schemas
+Services return Prisma payloads, which the plugin can't introspect. Add a
+class to `common/openapi-responses.ts` and `@ApiOkResponse({ type })`, then
+`pnpm api:generate` with the API running, and commit the schema.
+
+### 26. API entrypoint is `dist/src/main.js`
+`apps/api/tsconfig.json` includes `prisma/**/*.ts`, so the inferred root is `apps/api`.
+
+### 27. TanStack Router: layout routes need `id`, not `path: '/'`
+Two routes resolving to `/` throws at router creation and the PWA renders
+nothing.

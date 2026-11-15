@@ -7,7 +7,14 @@ Items in rough priority order:
 
 ---
 
-## 1. Real OpenAPI client generation
+## 1. ~~Real OpenAPI client generation~~ — DONE in Phase P
+Remaining: response schemas for the admin/audit/billing/payments/credit-notes/
+integrations/einvoice/public-api endpoints (add to
+`apps/api/src/common/openapi-responses.ts`, then `pnpm api:generate`).
+
+<details><summary>Original brief</summary>
+
+### Real OpenAPI client generation
 **Why.** `packages/api-client/src/generated/schema.ts` is still a stub, so
 `apps/web` can't use the typed client; it talks to the API via a raw
 `apiGet/apiPost` wrapper in `apps/web/src/lib/api.ts`. The CI workflow has
@@ -23,6 +30,8 @@ an `openapi-drift` job that would flag this the moment it runs.
    simplify a lot — the stub forced each page to cast through `unknown`.
 5. Commit, push. CI `openapi-drift` will now pass instead of needing the
    skip we snuck in.
+
+</details>
 
 ---
 

@@ -1,9 +1,10 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { IsBoolean, IsEmail, IsOptional, IsString, MaxLength } from 'class-validator';
 
 import { CurrentUser, TenantId } from '../../common/decorators.js';
 import { JwtAuthGuard } from '../../common/guards/jwt.guard.js';
+import { CustomerResponse } from '../../common/openapi-responses.js';
 import type { AuthenticatedUser } from '../../common/types.js';
 
 import { CustomersService } from './customers.service.js';
@@ -34,21 +35,25 @@ export class CustomersController {
   constructor(private readonly customers: CustomersService) {}
 
   @Get()
+  @ApiOkResponse({ type: [CustomerResponse] })
   list(@TenantId() tenantId: string) {
     return this.customers.list(tenantId);
   }
 
   @Get(':id')
+  @ApiOkResponse({ type: CustomerResponse })
   get(@TenantId() tenantId: string, @Param('id') id: string) {
     return this.customers.get(tenantId, id);
   }
 
   @Post()
+  @ApiCreatedResponse({ type: CustomerResponse })
   create(@TenantId() tenantId: string, @CurrentUser() user: AuthenticatedUser, @Body() body: CreateCustomerDto) {
     return this.customers.create(tenantId, user.userId, body);
   }
 
   @Patch(':id')
+  @ApiOkResponse({ type: CustomerResponse })
   update(
     @TenantId() tenantId: string,
     @CurrentUser() user: AuthenticatedUser,
