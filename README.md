@@ -105,11 +105,23 @@ Never commit real values. In staging and production, secrets come from GCP Secre
 
 ## Current status
 
-**Scaffold complete.** All phases of the build prompt are laid out: architecture pack, monorepo scaffold, data layer, core API modules with provider-adapter pattern (mocks for every integration), web PWA and admin console, infrastructure-as-code, CI/CD workflows, and runbooks. Mock providers run end-to-end without real credentials. Real adapters land only once each provider's official spec is on hand.
+**Scaffold complete + MVP flow verified end-to-end on a local stack.** All 15 phases A–O are committed on `main`. The full invoice lifecycle (WhatsApp message → draft → issue → MOCK IRN transmission → Paystack webhook → reconcile → PAID), credit notes, per-tenant API keys, admin cross-tenant view, and PostgreSQL Row-Level Security are all working. `pnpm build` 5/5, `pnpm typecheck` 9/9, `pnpm test` 6/6 (16 tests pass), `scripts/smoke.sh` 18/18.
 
-- **What works today:** local dev up with mocks, invoice create → MockProvider transmission → PDF render → mock payment link.
+- **What works today:** everything in the sequence diagrams, with mocks for every external provider.
 - **What's incomplete:** real APP adapter (blocked on NRS/APP spec), WhatsApp template approvals (blocked on Meta business verification), production deploy (needs Terraform `apply` and DNS).
-- **Next milestone:** confirm Proposed ADRs, obtain NRS/APP spec, run first staging deploy.
+- **Next milestone:** confirm Proposed ADRs, obtain NRS/APP spec, wire real OpenAPI client generation, run first staging deploy.
+
+### Picking this up in a new session
+
+Everything a new Claude Code session needs to clone this repo and continue is in **`build-instructions/`**:
+
+- `build-instructions/SESSION.md` — primary handoff: what was built, test results, where to pick up
+- `build-instructions/RESUME.md` — exact shell commands to get the stack back up
+- `build-instructions/PHASES.md` — per-phase log with commit hashes
+- `build-instructions/GOTCHAS.md` — 22 traps we hit, with fixes
+- `build-instructions/STACK.md` — architecture + contracts at a glance
+- `build-instructions/NEXT.md` — prioritized backlog
+- `build-instructions/COMMITS.md` — every commit on main with context
 
 ## Project documents
 
