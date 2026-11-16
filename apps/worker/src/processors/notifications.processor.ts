@@ -16,7 +16,8 @@ export class NotificationsProcessor extends WorkerHost {
   private readonly logger = new Logger(NotificationsProcessor.name);
 
   async process(job: Job<NotificationJob>): Promise<unknown> {
-    this.logger.log(`[notify] ${job.data.channel} -> ${job.data.to}`);
+    // Recipient is PII (phone/email); log the job id instead.
+    this.logger.log(`[notify] ${job.data.channel} job ${job.id} (${job.data.attachments?.length ?? 0} attachments)`);
     return { ok: true };
   }
 }

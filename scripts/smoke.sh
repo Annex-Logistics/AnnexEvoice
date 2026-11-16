@@ -49,6 +49,16 @@ echo "== 6. immutability =="
 CANCEL=$(curl -sS -o /dev/null -w '%{http_code}' -X POST -H "authorization: Bearer $TOKEN" "$API/v1/invoices/$DRAFT_ID/cancel")
 check "cancel non-draft invoice → 409" "[ \"$CANCEL\" = '409' ]"
 
+echo "== 6b. worker: transmission + PDF =="
+# Needs the worker running. PDF rendering launches Chromium, so allow a cold start.
+for _ in $(seq 1 30); do
+  INV=$(curl -sS -H "authorization: Bearer $TOKEN" "$API/v1/invoices/$DRAFT_ID")
+  [ "$(jq -r '.pdfUrl // empty' <<<"$INV")" != '' ] && break
+  sleep 1
+done
+check "invoice TRANSMITTED with IRN" "[ \"$(jq -r .status <<<"$INV")\" = 'TRANSMITTED' ] && jq -r .irn <<<\"\$INV\" | grep -q ."
+check "invoice pdfUrl set within 30s" "[ -n \"$(jq -r '.pdfUrl // empty' <<<"$INV")\" ]"
+
 echo "== 7. credit note against a transmitted invoice =="
 PAID_ID=$(curl -sS -H "authorization: Bearer $TOKEN" "$API/v1/invoices" | jq -r '[.[] | select(.status=="TRANSMITTED" or .status=="PAID")][0].id')
 if [ -n "$PAID_ID" ] && [ "$PAID_ID" != 'null' ]; then

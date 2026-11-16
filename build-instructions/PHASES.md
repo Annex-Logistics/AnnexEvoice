@@ -330,5 +330,52 @@ until response schemas are added (do it alongside NEXT #10 admin UI).
 
 ---
 
+## Phase P3 — real PDF rendering (session 2, 2026-11-16)
+**Scope.** NEXT #2.
+
+**Delivered.**
+- `apps/worker/src/pdf/pdf-renderer.service.ts`: single shared Playwright
+  Chromium process (lazy-launched, torn down in `onModuleDestroy`). JS
+  disabled in the context; every network request is aborted unless the URL
+  starts with `data:`, so customer-supplied strings can never make Chromium
+  fetch a remote resource. A4, 16/14mm margins, `printBackground`.
+- `apps/worker/src/storage/`: `StorageProvider` interface + `MockStorageProvider`
+  (writes under `STORAGE_LOCAL_DIR`, returns `file://` URLs; path-escape
+  guard) + `GcsStorageProvider` stub that throws. Selected by
+  `STORAGE_PROVIDER` in `WorkerModule`.
+- `apps/worker/src/processors/pdf-render.processor.ts` rewritten: reads
+  invoice under `WorkerTenantScope.run`, renders *outside* the DB
+  transaction (so Chromium doesn't hold Postgres open), stores
+  `{tenantId}/{invoiceId}-{number}.pdf`, writes `invoice.pdfUrl` and an
+  `invoice.pdf.rendered` audit row under scope, then enqueues notification
+  jobs on `notifications` (one per channel the customer has — phone/email).
+- `einvoice-submit` chains the PDF job AFTER the transaction commits (the
+  `WorkerTenantScope` callback must return before the PDF job runs, or it
+  reads a pre-TRANSMITTED row).
+- `notifications` processor no longer logs the recipient (PII); logs the
+  job id and attachment count instead.
+- HTML template is self-contained, strict-escapes every string, shows WHT
+  only when `whtKobo > 0`, uses `formatKoboAsNGN` from tax-engine, embeds
+  the NRS QR as a data URL.
+- `apps/worker/tsconfig.json`: excludes `*.spec.ts` — they were being
+  compiled into `dist/`.
+- `.env.example`: `STORAGE_LOCAL_DIR`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`.
+  `.gitignore`: `.storage/`.
+- Smoke test grows a "6b. worker: transmission + PDF" section (asserts
+  TRANSMITTED+IRN and a non-null `pdfUrl` within 30 s — cold Chromium
+  launch takes a few seconds).
+
+**Verified.**
+- Issued an invoice end-to-end; the worker rendered a 59 KB PDF to
+  `C:/Users/Legal/tools/annexevoice-storage/.../INV-000005.pdf` within 3 s
+  and set `invoice.pdfUrl`. Visually inspected the rendered PDF: header,
+  parties, line table, subtotals, QR code and IRN all present; notes are
+  HTML-escaped.
+- `pnpm test`: 19/19 (was 16/16 — the 3 new ones are escape + currency
+  format + conditional WHT line).
+- `scripts/smoke.sh`: 22/22 (was 20/20).
+
+---
+
 ## Not in this session
 See `NEXT.md` for the ranked backlog.

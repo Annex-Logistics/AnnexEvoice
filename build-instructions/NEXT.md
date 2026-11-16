@@ -35,24 +35,12 @@ an `openapi-drift` job that would flag this the moment it runs.
 
 ---
 
-## 2. Real PDF rendering
-**Why.** The `pdf-render` processor builds an HTML template in
-`apps/worker/src/processors/pdf-render.processor.ts` but doesn't actually
-render it — it logs the HTML length and returns. GCS upload is similarly
-unwired.
-
-**Do.**
-1. In the processor, launch Playwright's Chromium (binary already set in
-   the worker Dockerfile at `/usr/bin/chromium`).
-2. Render HTML → PDF with `page.pdf({ format: 'A4', printBackground: true })`.
-3. Upload to GCS under `{tenantId}/{invoiceId}-{number}.pdf`.
-4. Write `invoice.pdfUrl` with a signed URL (24 h).
-5. Chain a notification job (WhatsApp document send to the buyer + email).
-6. Extend the smoke script to assert `pdfUrl` becomes non-null after
-   transmission.
-
-Watch out for the browser launch flags in a container (`--no-sandbox` is in
-the Docker env docs).
+## 2. ~~Real PDF rendering~~ — DONE in Phase P3
+Remaining: real GCS storage (the `gcs` provider throws
+`NotImplementedException`) and real WhatsApp/email delivery of the PDF (the
+`notifications` processor still only logs). Both are blocked on real
+credentials/eligibility, so the mock storage + mock notifications stay the
+default; see NEXT #6.
 
 ---
 

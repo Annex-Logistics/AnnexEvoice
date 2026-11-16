@@ -57,3 +57,6 @@ packages/*/.turbo/
 *.tsbuildinfo
 dump.rdb
 *.log
+
+# Local object storage written by STORAGE_PROVIDER=mock
+.storage/

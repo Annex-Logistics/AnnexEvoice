@@ -157,3 +157,36 @@ class to `common/openapi-responses.ts` and `@ApiOkResponse({ type })`, then
 ### 27. TanStack Router: layout routes need `id`, not `path: '/'`
 Two routes resolving to `/` throws at router creation and the PWA renders
 nothing.
+
+## Added in Phase P3
+
+### 28. Spec files leak into `dist/`
+`apps/worker/tsconfig.json` had no `exclude`, so `*.spec.ts` were compiled
+and shipped. Add `"exclude": ["src/**/*.spec.ts"]`. The API's config
+excludes `test/` but not spec files beside sources — mirror this pattern if
+you add spec files there.
+
+### 29. Enqueue the next job AFTER the transaction commits
+BullMQ fires immediately. Calling `pdfRender.add(...)` inside the
+`scope.run(tenantId, async (tx) => ...)` callback means the PDF worker often
+reads the row before the TRANSMITTED update is visible (status looks
+PENDING_TRANSMISSION, `irn` is null, PDF is skipped or wrong). Enqueue
+AFTER the `await scope.run(...)` returns.
+
+### 30. Don't hold Postgres open across Chromium rendering
+Rendering a PDF takes ~1 s cold. If you do it inside `scope.run(...)` the
+Postgres transaction stays open the whole time, blocking RLS rowlocks and
+risking idle-in-transaction timeouts. Pattern: read inside scope, render
+outside, write inside a second scope.
+
+### 31. Playwright: paths with spaces and network isolation
+`.env` doesn't quote values, so an unquoted
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=C:/Program Files/Google/Chrome/...`
+splits at the space and the env var becomes just `C:/Program`. Quote the
+value. Also: disable JS and `route('**/*', r => r.request().url().startsWith('data:') ? r.continue() : r.abort())`
+so a customer-supplied URL in a note/description can never pull a remote
+resource into the rendered PDF.
+
+### 32. Log job ids, not recipients
+Notification payloads carry phone/email — PII. Log the job id and
+attachment count instead; pino redaction paths catch some but not all of it.
