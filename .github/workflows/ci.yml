@@ -92,7 +92,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile=false
       - run: pnpm --filter @annexevoice/api exec prisma generate
-      - run: pnpm --filter @annexevoice/api build
+      - run: pnpm --filter "@annexevoice/api..." build
       - name: Boot API, regenerate client, diff
         run: |
           pnpm --filter @annexevoice/api start:prod > api.log 2>&1 &
