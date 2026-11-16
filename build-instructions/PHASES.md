@@ -292,5 +292,90 @@ scripts/smoke.sh  18/18
 
 ---
 
+## Phase P — review fixes + real OpenAPI client (session 2, 2026-11-15)
+**Scope.** Re-verify the handoff on a fresh Windows machine, fix what broke,
+then NEXT #1.
+
+**Review findings fixed.**
+- `pnpm lint` failed in every package: ESLint 9 ignores `.eslintrc.cjs`.
+  Migrated to `eslint.config.mjs` (flat config); dropped `--ext`.
+- `RESUME.md` skipped the superuser `CREATE ROLE app_admin` step, so
+  `apply-rls.mjs` fails on a fresh DB.
+- `apps/web` crashed on boot: shell layout and dashboard both had path `/`
+  ("Duplicate routes found with id: /"). Shell is now a pathless layout.
+- Every web page and the admin console called `/customers`, `/admin/...`
+  etc. without the `/v1` prefix, so all requests 404'd.
+- API `start`/`start:prod` and `infra/docker/api.Dockerfile` ran
+  `dist/main.js`; the build emits `dist/src/main.js`.
+- CI `openapi-drift` could never detect drift: no Postgres/Redis services, no
+  `prisma generate`, `|| true` swallowed failures, and the generated banner
+  had a timestamp.
+
+**Delivered (NEXT #1).**
+- `@nestjs/swagger` CLI plugin enabled (`classValidatorShim`, and
+  `.controller.ts` added to `dtoFileNameSuffix` because DTOs live inline in
+  controllers) — request bodies now have real schemas.
+- `apps/api/src/common/openapi-responses.ts`: response schemas for auth,
+  tenants/me, tax/summary, customers, products, invoices (list/detail/create/
+  issue/cancel). Kobo fields are `string` (BigInt interceptor).
+- `packages/api-client/src/generated/schema.ts` generated from the live API;
+  deterministic banner.
+- `apps/web` uses `createAnnexEvoiceClient` + `unwrap()`; hand-written
+  response types deleted. Verified in the browser: dashboard, invoices,
+  invoice detail, customers, products, settings all render live data.
+
+**Not typed yet.** Admin, audit, billing, payments, credit-notes,
+integrations, einvoice, public-api responses — their `data` is `never`
+until response schemas are added (do it alongside NEXT #10 admin UI).
+
+---
+
+## Phase P3 — real PDF rendering (session 2, 2026-11-16)
+**Scope.** NEXT #2.
+
+**Delivered.**
+- `apps/worker/src/pdf/pdf-renderer.service.ts`: single shared Playwright
+  Chromium process (lazy-launched, torn down in `onModuleDestroy`). JS
+  disabled in the context; every network request is aborted unless the URL
+  starts with `data:`, so customer-supplied strings can never make Chromium
+  fetch a remote resource. A4, 16/14mm margins, `printBackground`.
+- `apps/worker/src/storage/`: `StorageProvider` interface + `MockStorageProvider`
+  (writes under `STORAGE_LOCAL_DIR`, returns `file://` URLs; path-escape
+  guard) + `GcsStorageProvider` stub that throws. Selected by
+  `STORAGE_PROVIDER` in `WorkerModule`.
+- `apps/worker/src/processors/pdf-render.processor.ts` rewritten: reads
+  invoice under `WorkerTenantScope.run`, renders *outside* the DB
+  transaction (so Chromium doesn't hold Postgres open), stores
+  `{tenantId}/{invoiceId}-{number}.pdf`, writes `invoice.pdfUrl` and an
+  `invoice.pdf.rendered` audit row under scope, then enqueues notification
+  jobs on `notifications` (one per channel the customer has — phone/email).
+- `einvoice-submit` chains the PDF job AFTER the transaction commits (the
+  `WorkerTenantScope` callback must return before the PDF job runs, or it
+  reads a pre-TRANSMITTED row).
+- `notifications` processor no longer logs the recipient (PII); logs the
+  job id and attachment count instead.
+- HTML template is self-contained, strict-escapes every string, shows WHT
+  only when `whtKobo > 0`, uses `formatKoboAsNGN` from tax-engine, embeds
+  the NRS QR as a data URL.
+- `apps/worker/tsconfig.json`: excludes `*.spec.ts` — they were being
+  compiled into `dist/`.
+- `.env.example`: `STORAGE_LOCAL_DIR`, `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`.
+  `.gitignore`: `.storage/`.
+- Smoke test grows a "6b. worker: transmission + PDF" section (asserts
+  TRANSMITTED+IRN and a non-null `pdfUrl` within 30 s — cold Chromium
+  launch takes a few seconds).
+
+**Verified.**
+- Issued an invoice end-to-end; the worker rendered a 59 KB PDF to
+  `C:/Users/Legal/tools/annexevoice-storage/.../INV-000005.pdf` within 3 s
+  and set `invoice.pdfUrl`. Visually inspected the rendered PDF: header,
+  parties, line table, subtotals, QR code and IRN all present; notes are
+  HTML-escaped.
+- `pnpm test`: 19/19 (was 16/16 — the 3 new ones are escape + currency
+  format + conditional WHT line).
+- `scripts/smoke.sh`: 22/22 (was 20/20).
+
+---
+
 ## Not in this session
 See `NEXT.md` for the ranked backlog.

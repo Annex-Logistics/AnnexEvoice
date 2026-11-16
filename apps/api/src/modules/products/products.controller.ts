@@ -1,9 +1,10 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { IsBoolean, IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 
 import { CurrentUser, TenantId } from '../../common/decorators.js';
 import { JwtAuthGuard } from '../../common/guards/jwt.guard.js';
+import { ProductResponse } from '../../common/openapi-responses.js';
 import type { AuthenticatedUser } from '../../common/types.js';
 
 import { ProductsService } from './products.service.js';
@@ -32,21 +33,25 @@ export class ProductsController {
   constructor(private readonly products: ProductsService) {}
 
   @Get()
+  @ApiOkResponse({ type: [ProductResponse] })
   list(@TenantId() tenantId: string) {
     return this.products.list(tenantId);
   }
 
   @Get(':id')
+  @ApiOkResponse({ type: ProductResponse })
   get(@TenantId() tenantId: string, @Param('id') id: string) {
     return this.products.get(tenantId, id);
   }
 
   @Post()
+  @ApiCreatedResponse({ type: ProductResponse })
   create(@TenantId() tenantId: string, @CurrentUser() user: AuthenticatedUser, @Body() body: CreateProductDto) {
     return this.products.create(tenantId, user.userId, { ...body, unitPriceKobo: BigInt(body.unitPriceKobo) });
   }
 
   @Patch(':id')
+  @ApiOkResponse({ type: ProductResponse })
   update(
     @TenantId() tenantId: string,
     @CurrentUser() user: AuthenticatedUser,

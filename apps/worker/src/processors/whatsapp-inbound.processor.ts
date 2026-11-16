@@ -1,9 +1,9 @@
+import { calculateInvoice, type TaxRule } from '@annexevoice/tax-engine';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { InvoiceStatus } from '@prisma/client';
 import type { Job } from 'bullmq';
 
-import { calculateInvoice, type TaxRule } from '@annexevoice/tax-engine';
 
 import { WorkerTenantScope } from '../tenant-scope.js';
 

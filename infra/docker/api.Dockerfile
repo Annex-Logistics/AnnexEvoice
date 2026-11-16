@@ -15,4 +15,4 @@ RUN groupadd -g 10001 app && useradd -u 10001 -g 10001 -s /bin/sh app
 WORKDIR /app
 COPY --from=build /out/api /app
 USER app
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]

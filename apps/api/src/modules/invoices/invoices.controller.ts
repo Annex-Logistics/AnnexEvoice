@@ -1,10 +1,11 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { ArrayMinSize, IsArray, IsDateString, IsInt, IsOptional, IsString, IsUUID, Min, ValidateNested } from 'class-validator';
 
 import { CurrentUser, TenantId } from '../../common/decorators.js';
 import { JwtAuthGuard } from '../../common/guards/jwt.guard.js';
+import { InvoiceDetailResponse, InvoiceListItemResponse, InvoiceResponse } from '../../common/openapi-responses.js';
 import type { AuthenticatedUser } from '../../common/types.js';
 
 import { InvoicesService } from './invoices.service.js';
@@ -34,16 +35,19 @@ export class InvoicesController {
   constructor(private readonly invoices: InvoicesService) {}
 
   @Get()
+  @ApiOkResponse({ type: [InvoiceListItemResponse] })
   list(@TenantId() tenantId: string) {
     return this.invoices.list(tenantId);
   }
 
   @Get(':id')
+  @ApiOkResponse({ type: InvoiceDetailResponse })
   get(@TenantId() tenantId: string, @Param('id') id: string) {
     return this.invoices.get(tenantId, id);
   }
 
   @Post()
+  @ApiCreatedResponse({ type: InvoiceResponse })
   createDraft(@TenantId() tenantId: string, @CurrentUser() user: AuthenticatedUser, @Body() body: CreateInvoiceDto) {
     return this.invoices.createDraft(tenantId, user.userId, {
       customerId: body.customerId,
@@ -61,11 +65,13 @@ export class InvoicesController {
   }
 
   @Post(':id/issue')
+  @ApiCreatedResponse({ type: InvoiceResponse })
   issue(@TenantId() tenantId: string, @CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
     return this.invoices.issue(tenantId, user.userId, id);
   }
 
   @Post(':id/cancel')
+  @ApiCreatedResponse({ type: InvoiceResponse })
   cancel(@TenantId() tenantId: string, @CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
     return this.invoices.cancelDraft(tenantId, user.userId, id);
   }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 
-import { apiPost } from '../lib/api';
+import { api, unwrap } from '../lib/api';
 
 export function LoginPage() {
   const [phone, setPhone] = useState('');
@@ -14,7 +14,7 @@ export function LoginPage() {
   async function requestOtp() {
     setError(null);
     try {
-      const data = await apiPost<{ devCode?: string }>('/auth/otp/request', { phone });
+      const data = await unwrap(api.POST('/v1/auth/otp/request', { body: { phone } }));
       setDevCode(data.devCode);
       setStage('verify');
     } catch {
@@ -25,7 +25,7 @@ export function LoginPage() {
   async function verifyOtp() {
     setError(null);
     try {
-      const data = await apiPost<{ accessToken: string }>('/auth/otp/verify', { phone, code });
+      const data = await unwrap(api.POST('/v1/auth/otp/verify', { body: { phone, code } }));
       if (data.accessToken) {
         localStorage.setItem('access_token', data.accessToken);
         navigate({ to: '/' });

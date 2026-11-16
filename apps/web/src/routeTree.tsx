@@ -14,7 +14,8 @@ const rootRoute = createRootRoute({ component: () => <Outlet /> });
 
 const loginRoute = createRoute({ getParentRoute: () => rootRoute, path: '/login', component: LoginPage });
 
-const shellRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: AppShell });
+// Pathless layout: with path '/' it collided with dashboardRoute ("Duplicate routes found with id: /").
+const shellRoute = createRoute({ getParentRoute: () => rootRoute, id: 'shell', component: AppShell });
 
 const dashboardRoute = createRoute({ getParentRoute: () => shellRoute, path: '/', component: DashboardPage });
 const invoicesRoute = createRoute({ getParentRoute: () => shellRoute, path: 'invoices', component: InvoicesPage });

@@ -7,7 +7,7 @@
 
 ## What was built this session
 
-Starting from an empty repository (`https://github.com/patricku-cpu/AnnexEvoice`),
+Starting from an empty repository (`https://github.com/Annex-Logistics/AnnexEvoice`),
 this session built the full AnnexEvoice scaffold described in `docs/build-prompt.md`:
 
 - **Architecture pack** — C4 context + container diagrams, ERD, three sequence
@@ -87,7 +87,7 @@ scripts/smoke.sh  18/18 checks
 
 ## Repo
 
-- `main` on `https://github.com/patricku-cpu/AnnexEvoice`
+- `main` on `https://github.com/Annex-Logistics/AnnexEvoice`
 - Commits `0ded90a` (initial scaffold) through `a5e1f76` (Phase O).
 - `COMMITS.md` has the full list with one line of context per commit.
 

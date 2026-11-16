@@ -1,13 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { apiGet } from '../lib/api';
-
-type Customer = { id: string; name: string; phone: string | null; email: string | null };
+import { api, unwrap } from '../lib/api';
 
 export function CustomersPage() {
   const customers = useQuery({
     queryKey: ['customers'],
-    queryFn: () => apiGet<Customer[]>('/customers'),
+    queryFn: () => unwrap(api.GET('/v1/customers')),
   });
 
   return (

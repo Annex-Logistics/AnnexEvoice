@@ -5,7 +5,7 @@
   "scripts": {
     "test": "echo 'e2e: run with pnpm test:e2e'",
     "test:e2e": "playwright test",
-    "lint": "eslint specs --ext .ts",
+    "lint": "eslint specs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {

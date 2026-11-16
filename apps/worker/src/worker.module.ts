@@ -4,8 +4,8 @@ import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { LoggerModule } from 'nestjs-pino';
 
+import { PdfRendererService } from './pdf/pdf-renderer.service.js';
 import { PrismaService } from './prisma.service.js';
-import { WorkerTenantScope } from './tenant-scope.js';
 import { EInvoiceReconcileProcessor } from './processors/einvoice-reconcile.processor.js';
 import { EInvoiceSubmitProcessor } from './processors/einvoice-submit.processor.js';
 import { NotificationsProcessor } from './processors/notifications.processor.js';
@@ -13,6 +13,10 @@ import { PaymentReconcileProcessor } from './processors/payment-reconcile.proces
 import { PdfRenderProcessor } from './processors/pdf-render.processor.js';
 import { RemindersProcessor } from './processors/reminders.processor.js';
 import { WhatsappInboundProcessor } from './processors/whatsapp-inbound.processor.js';
+import { GcsStorageProvider } from './storage/gcs-storage.provider.js';
+import { MockStorageProvider } from './storage/mock-storage.provider.js';
+import { StorageProviderToken } from './storage/storage.provider.js';
+import { WorkerTenantScope } from './tenant-scope.js';
 
 @Module({
   imports: [
@@ -34,6 +38,11 @@ import { WhatsappInboundProcessor } from './processors/whatsapp-inbound.processo
   providers: [
     PrismaService,
     WorkerTenantScope,
+    PdfRendererService,
+    {
+      provide: StorageProviderToken,
+      useFactory: () => (process.env.STORAGE_PROVIDER === 'gcs' ? new GcsStorageProvider() : new MockStorageProvider()),
+    },
     EInvoiceSubmitProcessor,
     EInvoiceReconcileProcessor,
     WhatsappInboundProcessor,

@@ -1,10 +1,11 @@
 import { BadRequestException, Body, Controller, Post, Res, UseGuards } from '@nestjs/common';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiCreatedResponse, ApiTags } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { IsEmail, IsOptional, IsString, Length, Matches } from 'class-validator';
 import type { Response } from 'express';
 
 import { Public } from '../../common/decorators.js';
+import { AuthTokensResponse, OtpRequestResponse } from '../../common/openapi-responses.js';
 
 import { AuthService } from './auth.service.js';
 import { OtpService } from './otp.service.js';
@@ -48,6 +49,7 @@ export class AuthController {
   @Post('otp/request')
   @Public()
   @ApiBody({ type: RequestOtpDto })
+  @ApiCreatedResponse({ type: OtpRequestResponse })
   async requestOtp(@Body() body: RequestOtpDto) {
     const code = await this.otp.issueOtp(body.phone);
     // In production the code is dispatched via WhatsApp/SMS. In dev we echo it so
@@ -57,6 +59,7 @@ export class AuthController {
   }
 
   @Post('otp/verify')
+  @ApiCreatedResponse({ type: AuthTokensResponse })
   @Public()
   async verifyOtp(@Body() body: VerifyOtpDto, @Res({ passthrough: true }) res: Response) {
     const ok = await this.otp.verify(body.phone, body.code);
@@ -69,6 +72,7 @@ export class AuthController {
   }
 
   @Post('password/login')
+  @ApiCreatedResponse({ type: AuthTokensResponse })
   @Public()
   async passwordLogin(@Body() body: PasswordLoginDto, @Res({ passthrough: true }) res: Response) {
     if (!body.email && !body.phone) throw new BadRequestException('email or phone required');

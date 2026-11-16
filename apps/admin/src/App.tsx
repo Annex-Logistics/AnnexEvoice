@@ -10,16 +10,16 @@ export function AdminApp() {
   const tenants = useQuery({
     queryKey: ['admin', 'tenants'],
     queryFn: async () => {
-      const { data } = await api.GET('/admin/tenants' as never, {} as never);
-      return (data as Array<{ id: string; legalName: string; tin: string | null }> | undefined) ?? [];
+      const { data } = await api.GET('/v1/admin/tenants');
+      return (data as unknown as Array<{ id: string; legalName: string; tin: string | null }> | undefined) ?? [];
     },
   });
 
   const dlq = useQuery({
     queryKey: ['admin', 'submissions', 'dlq'],
     queryFn: async () => {
-      const { data } = await api.GET('/admin/submissions/dlq' as never, {} as never);
-      return (data as Array<{ id: string; status: string }> | undefined) ?? [];
+      const { data } = await api.GET('/v1/admin/submissions/dlq');
+      return (data as unknown as Array<{ id: string; status: string }> | undefined) ?? [];
     },
   });
 

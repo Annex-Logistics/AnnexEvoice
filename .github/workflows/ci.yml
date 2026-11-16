@@ -52,6 +52,35 @@ jobs:
 
   openapi-drift:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: annexevoice
+          POSTGRES_PASSWORD: annexevoice
+          POSTGRES_DB: annexevoice
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://annexevoice:annexevoice@localhost:5432/annexevoice?schema=public
+      REDIS_URL: redis://localhost:6379
+      # Throwaway CI-only key; the API refuses to boot without a 32-byte key.
+      PII_ENCRYPTION_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -62,19 +91,17 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile=false
-      - run: pnpm --filter @annexevoice/api build
+      - run: pnpm --filter @annexevoice/api exec prisma generate
+      - run: pnpm --filter "@annexevoice/api..." build
       - name: Boot API, regenerate client, diff
         run: |
-          pnpm --filter @annexevoice/api start:prod &
+          pnpm --filter @annexevoice/api start:prod > api.log 2>&1 &
           API_PID=$!
-          sleep 8
-          pnpm api:generate || true
+          for i in $(seq 1 30); do curl -sf http://localhost:3000/v1/health > /dev/null && break; sleep 2; done
+          curl -sf http://localhost:3000/v1/health > /dev/null || { cat api.log; exit 1; }
+          pnpm api:generate
           kill "$API_PID"
           if ! git diff --exit-code packages/api-client/src/generated; then
             echo "OpenAPI client drift detected. Run 'pnpm api:generate' and commit."
             exit 1
           fi
-        env:
-          NODE_ENV: test
-          DATABASE_URL: postgresql://annexevoice:annexevoice@localhost:5432/annexevoice
-          REDIS_URL: redis://localhost:6379

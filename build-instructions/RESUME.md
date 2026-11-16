@@ -2,7 +2,7 @@
 
 ## 1. Clone and install
 ```bash
-git clone https://github.com/patricku-cpu/AnnexEvoice.git
+git clone https://github.com/Annex-Logistics/AnnexEvoice.git
 cd AnnexEvoice
 corepack enable && corepack prepare pnpm@9.12.0 --activate
 pnpm install
@@ -33,6 +33,8 @@ sudo -u postgres /usr/lib/postgresql/16/bin/pg_ctl -D "$PGDATA" -l "$PGDATA/log"
 # its shadow database.)
 sudo -u postgres psql -h "$PGDATA" -p 5433 -c "CREATE USER annexevoice PASSWORD 'annexevoice' CREATEDB;"
 sudo -u postgres psql -h "$PGDATA" -p 5433 -c "CREATE DATABASE annexevoice OWNER annexevoice;"
+# rls.sql references app_admin; only a superuser can create it, so do it once here.
+sudo -u postgres psql -h "$PGDATA" -p 5433 -d annexevoice -c "CREATE ROLE app_admin; ALTER ROLE app_admin BYPASSRLS;"
 
 # Redis
 redis-server --daemonize yes --port 6380
@@ -42,6 +44,21 @@ Then `.env`:
 DATABASE_URL=postgresql://annexevoice:annexevoice@localhost:5433/annexevoice?schema=public
 REDIS_URL=redis://localhost:6380
 ```
+
+### Option C — Windows, no Docker
+Unzip the EDB PostgreSQL 16 "binaries" zip and a `redis-windows/redis-windows`
+release somewhere outside the repo, then:
+```bash
+initdb -D ~/tools/pgdata -U postgres --auth=trust -E UTF8
+echo "port=5433" >> ~/tools/pgdata/postgresql.conf
+pg_ctl -D ~/tools/pgdata -l ~/tools/pg.log start
+psql -h localhost -p 5433 -U postgres -c "CREATE USER annexevoice PASSWORD 'annexevoice' CREATEDB;" -c "CREATE DATABASE annexevoice OWNER annexevoice;"
+psql -h localhost -p 5433 -U postgres -d annexevoice -c "CREATE ROLE app_admin; ALTER ROLE app_admin BYPASSRLS;"
+redis-server.exe --port 6380 --save ""
+```
+Same `.env` values as Option B. Nothing in the apps loads `.env` itself, so
+export it into the shell first: `set -a && . ./.env && set +a`.
+`scripts/smoke.sh` also needs `jq` and a real `python3` on PATH.
 
 ## 3. The rest of `.env`
 Either copy `.env.example` and edit, or paste the exact dev set this session used:
